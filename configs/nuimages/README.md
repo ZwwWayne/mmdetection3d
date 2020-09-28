@@ -7,6 +7,15 @@ We follow the class mapping in nuScenes dataset, which maps the original categor
 The baseline results include instance segmentation models, e.g., Mask R-CNN and Cascade Mask R-CNN.
 We will support panoptic segmentation models in the future.
 
+## Data convertion
+
+In MMDetection3D we convert the annotations of nuImages into COCO format. The command is as below
+
+```shell
+python tools/data_converter/nuimage_converter.py --version v1.0-train v1.0-val v1.0-test v1.0-mini
+```
+You can also set the data set root path and output path through `--data-root` and `---out-dir`, respectively.
+
 
 ## Results
 
