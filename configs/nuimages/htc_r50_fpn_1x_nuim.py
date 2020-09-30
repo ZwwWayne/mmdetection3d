@@ -14,7 +14,7 @@ model = dict(
             in_channels=256,
             conv_out_channels=256,
             num_classes=32,
-            ignore_label=255,
+            ignore_label=0,
             loss_weight=0.2)))
 
 data_root = 'data/nuimages/'
