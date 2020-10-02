@@ -208,10 +208,10 @@ class NuScenesDataset(Custom3DDataset):
         )
 
         if self.modality['use_camera']:
-            image_paths = []
+            image_paths = dict()
             lidar2img_rts = []
             for cam_type, cam_info in info['cams'].items():
-                image_paths.append(cam_info['data_path'])
+                image_paths.update({cam_type: cam_info['data_path']})
                 # obtain lidar to image transformation matrix
                 lidar2cam_r = np.linalg.inv(cam_info['sensor2lidar_rotation'])
                 lidar2cam_t = cam_info[
@@ -227,9 +227,8 @@ class NuScenesDataset(Custom3DDataset):
 
             input_dict.update(
                 dict(
-                    img_filename=image_paths,
-                    lidar2img=lidar2img_rts,
-                ))
+                    img_info=dict(filename=image_paths),
+                    lidar2img=lidar2img_rts))
 
         if not self.test_mode:
             annos = self.get_ann_info(index)
