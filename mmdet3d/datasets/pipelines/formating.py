@@ -130,6 +130,14 @@ class DefaultFormatBundle3D(object):
             dict: The result dict contains the data that is formatted with
                 default bundle.
         """
+        # Format 3D data
+        for key in [
+                'voxels', 'coors', 'voxel_centers', 'num_points', 'points'
+        ]:
+            if key not in results:
+                continue
+            results[key] = DC(to_tensor(results[key]), stack=False)
+
         # 2D format bundle
         img_fields = results.get('img_fields', [])
         # img_fields must contain key 'img' if its length is 1
