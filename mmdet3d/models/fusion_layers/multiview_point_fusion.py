@@ -54,7 +54,7 @@ def mvml_point_sample(
     img_crop_offset,
     pcd_trans_factor,
     pcd_scale_factor,
-    pcd_flip,
+    pcd_horizontal_flip,
     img_flip,
     img_pad_shape,
     img_shape,
@@ -78,7 +78,7 @@ def mvml_point_sample(
     # Step 1: convert points to original points
     # aug order: flip -> trans -> scale -> rot
     # The transformation follows the augmentation order in data pipeline
-    if pcd_flip:
+    if pcd_horizontal_flip:
         # if the points are flipped, flip them back first
         points[:, 1] = -points[:, 1]
 
@@ -326,8 +326,8 @@ class MultiViewPointFusion(nn.Module):
             pts.new_tensor(lidar2img_rt)
             for lidar2img_rt in img_meta['lidar2img']
         ]
-        pcd_flip = (
-            img_meta['pcd_flip'] if 'pcd_flip' in img_meta.keys() else False)
+        pcd_horizontal_flip = (
+            img_meta['pcd_horizontal_flip'] if 'pcd_horizontal_flip' in img_meta.keys() else False)
         img_flip = (img_meta['flip'] if 'flip' in img_meta.keys() else False)
         img_pts = mvml_point_sample(
             img_feats,
@@ -338,7 +338,7 @@ class MultiViewPointFusion(nn.Module):
             img_crop_offset,
             pcd_trans_factor,
             pcd_scale_factor,
-            pcd_flip=pcd_flip,
+            pcd_horizontal_flip=pcd_horizontal_flip,
             img_flip=img_flip,
             img_pad_shape=img_meta['pad_shape'][:2],
             img_shape=img_meta['img_shape'],

@@ -41,7 +41,6 @@ class LoadMultiViewImageFromFiles(object):
             results['ori_shape'] = img.shape
             # Set initial values for default meta_keys
             results['pad_shape'] = img.shape
-            results['scale_factor'] = 1.0
         return results
 
     def __repr__(self):

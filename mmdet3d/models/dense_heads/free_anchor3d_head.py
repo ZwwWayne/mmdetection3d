@@ -256,10 +256,8 @@ class FreeAnchor3DHead(Anchor3DHead):
         weight = 1 / torch.clamp(1 - matched_prob, 1e-12, None)
         weight /= weight.sum(dim=1).unsqueeze(dim=-1)
         bag_prob = (weight * matched_prob).sum(dim=1)
-        # positive_bag_loss = -self.alpha * log(bag_prob)
-        bag_prob = bag_prob.clamp(0, 1)  # to avoid bug of BCE, check
-        return self.alpha * F.binary_cross_entropy(
-            bag_prob, torch.ones_like(bag_prob), reduction='none')
+        positive_bag_loss = -self.alpha * bag_prob.log()
+        return positive_bag_loss
 
     def negative_bag_loss(self, cls_prob, box_prob):
         """Generate negative bag loss.
@@ -274,7 +272,5 @@ class FreeAnchor3DHead(Anchor3DHead):
             torch.Tensor: Loss of negative samples.
         """
         prob = cls_prob * (1 - box_prob)
-        prob = prob.clamp(0, 1)  # to avoid bug of BCE, check
-        negative_bag_loss = prob**self.gamma * F.binary_cross_entropy(
-            prob, torch.zeros_like(prob), reduction='none')
-        return (1 - self.alpha) * negative_bag_loss
+        negative_bag_loss = prob**self.gamma * (1 - prob).log()
+        return -(1 - self.alpha) * negative_bag_loss
