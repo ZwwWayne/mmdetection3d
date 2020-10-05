@@ -88,6 +88,8 @@ class DataBaseSampler(object):
         prepare (dict): Name of preparation functions and the input value.
         sample_groups (dict): Sampled classes and numbers.
         classes (list[str]): List of classes. Default: None.
+        pts_sample_ratio (float|int|list[float|int]): The relative ratio of
+            points that are really pasted to the original points.
         points_loader(dict): Config of points loader. Default: dict(
             type='LoadPointsFromFile', load_dim=4, use_dim=[0,1,2,3])
     """
@@ -99,6 +101,7 @@ class DataBaseSampler(object):
                  prepare,
                  sample_groups,
                  classes=None,
+                 pts_sample_ratio=1,
                  points_loader=dict(
                      type='LoadPointsFromFile',
                      load_dim=4,
@@ -112,6 +115,16 @@ class DataBaseSampler(object):
         self.cat2label = {name: i for i, name in enumerate(classes)}
         self.label2cat = {i: name for i, name in enumerate(classes)}
         self.points_loader = mmcv.build_from_cfg(points_loader, PIPELINES)
+        if isinstance(pts_sample_ratio, (float, int)):
+            pts_sample_ratio = [pts_sample_ratio] * 2
+        elif isinstance(pts_sample_ratio, (list, tuple)):
+            pts_sample_ratio = tuple(pts_sample_ratio)
+        else:
+            raise ValueError(
+                'Invalid argument "pts_sample_ratio", expect either float/int'
+                f'or list/tuple of float/int, got {pts_sample_ratio}')
+        assert len(pts_sample_ratio) == 2
+        self.pts_sample_ratio = pts_sample_ratio
 
         db_infos = mmcv.load(info_path)
 
@@ -187,6 +200,19 @@ class DataBaseSampler(object):
                 db_infos[name] = filtered_infos
         return db_infos
 
+    def sample_gt_points(self, s_points):
+        pts_sample_ratio = np.random.uniform(self.pts_sample_ratio[0],
+                                             self.pts_sample_ratio[1])
+        if pts_sample_ratio < 1:
+            num_points = len(s_points)
+            pts_sample_num = int(pts_sample_ratio * num_points)
+            # use permutation to avoid sampling similar points
+            # this is 2x faster than
+            # np.random.choice(num_points, pts_sample_num, replace=False)
+            pts_choices = np.random.permutation(num_points)[:pts_sample_num]
+            s_points = s_points[pts_choices]
+        return s_points
+
     def sample_all(self, gt_bboxes, gt_labels, img=None):
         """Sampling all categories of bboxes.
 
@@ -254,6 +280,8 @@ class DataBaseSampler(object):
                     info['path']) if self.data_root else info['path']
                 results = dict(pts_filename=file_path)
                 s_points = self.points_loader(results)['points']
+                # perform points sampling before pasting
+                s_points = self.sample_gt_points(s_points)
                 s_points[:, :3] += info['box3d_lidar'][:3]
 
                 count += 1
@@ -331,6 +359,9 @@ class MMDataBaseSampler(DataBaseSampler):
                  collision_in_classes=False,
                  depth_consistent=False,
                  blending_type=None,
+                 img_loader=dict(type='LoadImageFromFile'),
+                 mask_loader=dict(
+                     type='LoadImageFromFile', color_type='grayscale'),
                  points_loader=dict(
                      type='LoadPointsFromFile',
                      load_dim=4,
@@ -348,6 +379,8 @@ class MMDataBaseSampler(DataBaseSampler):
         self.check_2D_collision = check_2D_collision
         self.collision_thr = collision_thr
         self.collision_in_classes = collision_in_classes
+        self.img_loader = mmcv.build_from_cfg(img_loader, PIPELINES)
+        self.mask_loader = mmcv.build_from_cfg(mask_loader, PIPELINES)
 
     def sample_all(self, gt_bboxes_3d, gt_names, gt_bboxes_2d=None, img=None):
         sampled_num_dict = {}
@@ -417,15 +450,23 @@ class MMDataBaseSampler(DataBaseSampler):
                     info = sampled[inds]
                 else:
                     info = sampled[idx]
+
                 pcd_file_path = os.path.join(
                     self.data_root,
                     info['path']) if self.data_root else info['path']
                 img_file_path = pcd_file_path + '.png'
                 mask_file_path = pcd_file_path + '.mask.png'
-                s_points = np.fromfile(
-                    pcd_file_path, dtype=np.float32).reshape([-1, 4])
-                s_patch = mmcv.imread(img_file_path)
-                s_mask = mmcv.imread(mask_file_path, 'grayscale')
+
+                results = dict(pts_filename=pcd_file_path)
+                s_points = self.points_loader(results)['points']
+                # perform points sampling before pasting
+                s_points = self.sample_gt_points(s_points)
+                patch_results = dict(
+                    img_prefix=None, img_info=dict(filename=img_file_path))
+                mask_results = dict(
+                    img_prefix=None, img_info=dict(filename=mask_file_path))
+                s_patch = self.img_loader(patch_results)['img']
+                s_mask = self.mask_loader(mask_results)['img']
 
                 if 'rot_transform' in info:
                     rot = info['rot_transform']
