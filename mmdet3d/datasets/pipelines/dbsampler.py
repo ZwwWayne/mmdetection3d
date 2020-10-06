@@ -359,6 +359,7 @@ class MMDataBaseSampler(DataBaseSampler):
                  collision_in_classes=False,
                  depth_consistent=False,
                  blending_type=None,
+                 pts_sample_ratio=1,
                  img_loader=dict(type='LoadImageFromFile'),
                  mask_loader=dict(
                      type='LoadImageFromFile', color_type='grayscale'),
@@ -371,6 +372,7 @@ class MMDataBaseSampler(DataBaseSampler):
             data_root=data_root,
             rate=rate,
             prepare=prepare,
+            pts_sample_ratio=pts_sample_ratio,
             sample_groups=sample_groups,
             classes=classes,
             points_loader=points_loader)
