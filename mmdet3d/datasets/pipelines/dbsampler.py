@@ -102,6 +102,7 @@ class DataBaseSampler(object):
                  sample_groups,
                  classes=None,
                  pts_sample_ratio=1,
+                 pts_sample_min=1,
                  points_loader=dict(
                      type='LoadPointsFromFile',
                      load_dim=4,
@@ -125,6 +126,7 @@ class DataBaseSampler(object):
                 f'or list/tuple of float/int, got {pts_sample_ratio}')
         assert len(pts_sample_ratio) == 2
         self.pts_sample_ratio = pts_sample_ratio
+        self.pts_sample_min = pts_sample_min
 
         db_infos = mmcv.load(info_path)
 
@@ -206,6 +208,9 @@ class DataBaseSampler(object):
         if pts_sample_ratio < 1:
             num_points = len(s_points)
             pts_sample_num = int(pts_sample_ratio * num_points)
+            pts_sample_num = max(self.pts_sample_min, pts_sample_num)
+            if pts_sample_num == num_points:
+                return s_points
             # use permutation to avoid sampling similar points
             # this is 2x faster than
             # np.random.choice(num_points, pts_sample_num, replace=False)
@@ -360,6 +365,7 @@ class MMDataBaseSampler(DataBaseSampler):
                  depth_consistent=False,
                  blending_type=None,
                  pts_sample_ratio=1,
+                 pts_sample_min=1,
                  img_loader=dict(type='LoadImageFromFile'),
                  mask_loader=dict(
                      type='LoadImageFromFile', color_type='grayscale'),
@@ -373,6 +379,7 @@ class MMDataBaseSampler(DataBaseSampler):
             rate=rate,
             prepare=prepare,
             pts_sample_ratio=pts_sample_ratio,
+            pts_sample_min=pts_sample_min,
             sample_groups=sample_groups,
             classes=classes,
             points_loader=points_loader)
