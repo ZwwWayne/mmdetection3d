@@ -258,7 +258,7 @@ optimizer = dict(
         lr=0.02,
         momentum=0.9,
         weight_decay=0.0001,
-        step_interval=2))
+        step_interval=1))
 optimizer_config = dict(grad_clip=dict(max_norm=35, norm_type=2))
 lr_config = dict(
     policy='CosineAnnealing',
