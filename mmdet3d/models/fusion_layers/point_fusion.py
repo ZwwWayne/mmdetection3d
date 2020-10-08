@@ -273,13 +273,11 @@ class PointFusion(nn.Module):
         else:
             img_ins = img_feats
         img_feats_per_point = []
+
         # Sample multi-level features
         for i in range(len(img_metas)):
             mlvl_img_feats = []
             for level in range(len(self.img_levels)):
-                if torch.isnan(img_ins[level][i:i + 1]).any():
-                    import pdb
-                    pdb.set_trace()
                 mlvl_img_feats.append(
                     self.sample_single(img_ins[level][i:i + 1], pts[i][:, :3],
                                        img_metas[i]))
@@ -330,7 +328,7 @@ class PointFusion(nn.Module):
             pcd_scale_factor,
             pcd_horizontal_flip=pcd_horizontal_flip,
             img_flip=img_flip,
-            img_pad_shape=img_meta['pad_shape'][:2],
+            img_pad_shape=img_meta['input_shape'][:2],
             img_shape=img_meta['img_shape'][:2],
             aligned=self.aligned,
             padding_mode=self.padding_mode,

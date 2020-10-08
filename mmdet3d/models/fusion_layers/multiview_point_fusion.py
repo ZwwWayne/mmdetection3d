@@ -294,6 +294,7 @@ class MultiViewPointFusion(nn.Module):
                 len(img_meta), -1, img_in.size(-3), img_in.size(-2),
                 img_in.size(-1)) for img_in in img_ins
         ]
+
         for i in range(len(img_meta)):
             curr_img_ins = [img_in[i] for img_in in img_ins]
             mlvl_img_feats = self.sample_single(curr_img_ins, pts[i],
@@ -340,7 +341,7 @@ class MultiViewPointFusion(nn.Module):
             pcd_scale_factor,
             pcd_horizontal_flip=pcd_horizontal_flip,
             img_flip=img_flip,
-            img_pad_shape=img_meta['pad_shape'][:2],
+            img_pad_shape=img_meta['input_shape'][:2],
             img_shape=img_meta['img_shape'],
             aligned=self.aligned,
             padding_mode=self.padding_mode,

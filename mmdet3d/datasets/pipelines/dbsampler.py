@@ -117,7 +117,7 @@ class DataBaseSampler(object):
         self.label2cat = {i: name for i, name in enumerate(classes)}
         self.points_loader = mmcv.build_from_cfg(points_loader, PIPELINES)
         if isinstance(pts_sample_ratio, (float, int)):
-            pts_sample_ratio = [pts_sample_ratio] * 2
+            pts_sample_ratio = tuple([pts_sample_ratio] * 2)
         elif isinstance(pts_sample_ratio, (list, tuple)):
             pts_sample_ratio = tuple(pts_sample_ratio)
         else:
@@ -203,9 +203,9 @@ class DataBaseSampler(object):
         return db_infos
 
     def sample_gt_points(self, s_points):
-        pts_sample_ratio = np.random.uniform(self.pts_sample_ratio[0],
-                                             self.pts_sample_ratio[1])
-        if pts_sample_ratio < 1:
+        if self.pts_sample_ratio != (1, 1):
+            pts_sample_ratio = np.random.uniform(self.pts_sample_ratio[0],
+                                                 self.pts_sample_ratio[1])
             num_points = len(s_points)
             pts_sample_num = int(pts_sample_ratio * num_points)
             pts_sample_num = max(self.pts_sample_min, pts_sample_num)
